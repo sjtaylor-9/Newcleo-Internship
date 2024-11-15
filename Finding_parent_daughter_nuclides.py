@@ -1,14 +1,7 @@
-# This file should loop through all the endf data and create a csv file with:
-# column 1 = endf ID
-# column 2 = 
-
-
-
-# For parent IDs, calculate the possible parent IDs for all reactions of a given nuclide then check if these IDs are in the database
-
 import numpy as np
 import endf
 import os
+import pandas as pd
 
 # Define the Element Symbols
 element_symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf']
@@ -23,6 +16,7 @@ def build_nuclide_ID(atomic_number, mass_number):
     Returns:
         _type_: _description_
     """
+    # ZAID calculated as 1000*Z + A
     if A < 10:
         ID = str(atomic_number) + "00" + str(mass_number)
     else:
@@ -79,10 +73,10 @@ def calculate_daughter(atomic_number, mass_number, reaction):
 
     return 
 
-
 # Path to Lib80x files, which are the cross-sections of reactions in the ENDF database
 lib_dir = r'C:\USers\sam.taylor\OneDrive - Newcleo\Documents\Modelling_LFR\Generating_MPR_file\Lib80x\Lib80x'
 
+nuclide_data =[]
 nuclide = 1001
 while nuclide < 98254:
     nuclide_str = str(nuclide)
@@ -103,6 +97,9 @@ while nuclide < 98254:
     # Nuclide ID in form ZZAAAI
     nuclide_ID = build_nuclide_ID(Z, A)
     
+    # Nuclide name in form PU243
+    nuclide_name = element_symbols[Z-1].upper() + str(A)
+    
     # Build infile name based on chosen nuclide
     infile_str = (lib_dir + element_symbols[Z - 1] + "/" + nuclide_str + ".802nc")
     
@@ -111,22 +108,44 @@ while nuclide < 98254:
         table = endf.ace.get_table(infile_str)
 
         # Check whether the database has the required reactions for the nuclide and if so calculate the daughter nuclide ID in the form ZZAAAI
+        # If the reaction does not exist then the ID is set to NA
         if 16 in (table.interpret().reactions).keys():
             daughter_16 = calculate_daughter(Z, A, reaction = 16)
+        else:
+            daughter_16 = 'NA'
+        
         if 17 in (table.interpret().reactions).keys():
             daughter_17 = calculate_daughter(Z, A, reaction = 17)
+        else:
+            daughter_17 = 'NA'
+        
         if 18 in (table.interpret().reactions).keys():
             daughter_18 = calculate_daughter(Z, A, raction = 18)
+        else:
+            daughter_18 = 'NA'
+        
         if 102 in (table.interpret().reactions).keys():
             daughter_102 = calculate_daughter(Z, A, reaction = 102)
+        else:
+            daughter_102 = 'NA'
+            
         if 103 in (table.interpret().reactions).keys():
             daughter_103 = calculate_daughter(Z, A, reaction = 103)
-    
+        else:
+            daughter_103 = 'NA'
 
+        # Calculate the number of reactions for which the nuclide is the parent
+        daughter_ids_array = [daughter_16, daughter_17, daughter_18, daughter_102, daughter_103]
+        NumberReactions = 0
+        for value in daughter_ids_array:
+            if value != 'NA':
+                NumberReactions = NumberReactions + 1
+                
         # If nuclide is daughter of reaction 16 (n,2n) then parent should have A+1
         parent_A_16 = A + 1
         parent_16 = build_nuclide_ID(Z, parent_A_16)
-        
+        #if parent_16 in (table.interpret().zaid).keys():
+            
         # If nuclide is daughter of reaction 17 (n,3n) then parent should have A+2
         parent_A_17 = A + 2
         parent_17 = build_nuclide_ID(Z, parent_A_17)
@@ -142,10 +161,29 @@ while nuclide < 98254:
         parent_Z_103 = Z + 1
         parent_103 = build_nuclide_ID(parent_Z_103, A)
         
+        NumberParents = 5
         
-        
-        
-        
-        
+        nuclide_data.append = [{'Nuclide Name': nuclide_name, 
+                                'Nuclide ZAID': nuclide_ID, 
+                                'NumberReactions': NumberReactions, 
+                                'Reaction 16 Daughter ZAID': daughter_16, 
+                                'Reaction 17 Daughter ZAID': daughter_17, 
+                                'Reaction 18 Daughter ZAID': daughter_18, 
+                                'Reaction 102 Daughter ZAID': daughter_102, 
+                                'Reaction 103 Daughter ZAID': daughter_103, 
+                                'Number Parents': NumberParents, 
+                                'Reaction 16 Parent ZAID': parent_16, 
+                                'Reaction 17 Parent ZAID': parent_17, 
+                                'Parent 18 Daughter ZAID': parent_18, 
+                                'Reaction 102 Parent ZAID': parent_102, 
+                                'Reaction 103 Parent ZAID': parent_103,}]
         
     nuclide = nuclide + 1
+    
+# Convert the list of dictionaries to a DataFrame
+df = pd.DataFrame(nuclide_data)
+
+# Save the whole array to a csv file
+file_name = 'ZAID_results.csv'
+df.to_csv(file_name, index = False)
+
