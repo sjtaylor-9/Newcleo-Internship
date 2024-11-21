@@ -228,4 +228,47 @@ zaid = df[df.columns[1]]
 orion_id = df[df.columns[2]]
 NumberReactions = df[df.columns[3]]
 daughter_16 = df[df.columns[4]]
-daughter_1
+daughter_17 = df[df.columns[5]]
+daughter_18 = df[df.columns[6]]
+daughter_102 = df[df.columns[7]]
+daughter_103 = df[df.columns[8]]
+NumberParents = df[df.columns[9]]
+parent_16 = df[df.columns[10]]
+parent_17 = df[df.columns[11]]
+parent_102 = df[df.columns[12]]
+parent_103 = df[df.columns[13]]
+
+#file_path = r'C:\Users\sam.taylor\OneDrive - Newcleo\Documents\Modelling_LFR\Generating_MPR_file\LFR30_MPR.txt'
+file_path = r'/Users/sam/Documents/NewcleoInternship/LFR30_MPR.txt'
+
+# Opens the excel file containing the ORION IDs for each nuclide and loads it in a pandas dataframe
+ORION_ID_dir = r'/Users/sam/Documents/NewcleoInternship/orion_nuclides_list.xlsx'
+df_ORION_ID = pd.read_excel(ORION_ID_dir, header = None)
+# Columns in excel file do not contain headers so create them here
+df_ORION_ID.columns = ['Nuclide Name', 'Buffer Mass']
+nuclide_in_df = df_ORION_ID[df_ORION_ID.columns[0]]
+
+# Write the preliminary information into the MPR file
+with open(file_path, "w") as file:
+    file.write('BurnupSteps      1\n')
+    file.write('0\n')  # is fresh fuel
+    file.write(f'NNuclides   {len(nuclide)}\n')
+    file.write(f'MaxReactions   5\n') # Maximum number of reactions for a single nuclide, set to 5 as only interested in MT = 16, 17, 18, 102, 103
+    
+    # Iterates through each row of the pandas dataframe and writes the data into the .txt file in the MPR file format
+    for i, row in df.iterrows():
+        save_to_MPR(orion_id[i], 
+                    zaid[i], 
+                    nuclide[i], 
+                    NumberReactions[i], 
+                    daughter_16[i], 
+                    daughter_17[i], 
+                    daughter_18[i], 
+                    daughter_102[i], 
+                    daughter_103[i], 
+                    NumberParents[i], 
+                    parent_16[i], 
+                    parent_17[i],
+                    parent_102[i], 
+                    parent_103[i],
+                    nuclide_in_df)
