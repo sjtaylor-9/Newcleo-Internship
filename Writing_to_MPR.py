@@ -68,7 +68,7 @@ def build_parent_daughter_name(id_number):
     The ZAID is in the form ZZAAAI, so the function first removes I(=0), and then sets Z to the first 2 digits and A as the rest, whilst removing all leading/trailing zeroes.
 
     Args:
-        id_number (float): The ZAID number of tha parent/daughter nuclide, in the form 10010.0.
+        id_number (float): The ZAID number of the parent/daughter nuclide, in the form 10010.0.
 
     Returns:
         nuclear_notation (str): The name of the parent/daughter nuclide in the form PU243.
@@ -228,64 +228,4 @@ def save_to_MPR(ORION, nuclide_ID, name, NumberReactions, daughter_16, daughter_
 # -------------  Main Code  ------------ #
 
 # Define the Element Symbols. Eisteinium included to prevent list index issues when calculating the parent nuclide name of Cf.
-element_symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es']
-
-# Reads in the csv file containing the data to be saved to the MPR file and assigns it to an array
-#file_dir = r'C:\Users\sam.taylor\OneDrive - Newcleo\Documents\Modelling_LFR\Generating_MPR_file\ZAID_results.csv'
-file_dir = r'/Users/sam/Documents/NewcleoInternship/ZAID_results.csv'
-df = pd.read_csv(file_dir, header = 0)
-
-# Assigns each column of csv file to a variable
-nuclide = df[df.columns[0]]
-zaid = df[df.columns[1]]
-orion_id = df[df.columns[2]]
-NumberReactions = df[df.columns[3]]
-daughter_16 = df[df.columns[4]]
-daughter_17 = df[df.columns[5]]
-daughter_18 = df[df.columns[6]]
-daughter_102 = df[df.columns[7]]
-daughter_103 = df[df.columns[8]]
-NumberParents = df[df.columns[9]]
-parent_16 = df[df.columns[10]]
-parent_17 = df[df.columns[11]]
-parent_102 = df[df.columns[12]]
-parent_103 = df[df.columns[13]]
-
-# Sort the dataframe so that it is in the order of ascending ORION IDs
-df = df.sort_values(by=df.columns[2])
-
-#file_path = r'C:\Users\sam.taylor\OneDrive - Newcleo\Documents\Modelling_LFR\Generating_MPR_file\LFR30_MPR.txt'
-file_path = r'/Users/sam/Documents/NewcleoInternship/LFR30_MPR.txt'
-
-# Opens the excel file containing the ORION IDs for each nuclide and loads it in a pandas dataframe
-ORION_ID_dir = r'/Users/sam/Documents/NewcleoInternship/orion_nuclides_list.xlsx'
-df_ORION_ID = pd.read_excel(ORION_ID_dir, header = None)
-# Columns in excel file do not contain headers so create them here
-df_ORION_ID.columns = ['Nuclide Name', 'Buffer Mass']
-nuclide_in_df = df_ORION_ID[df_ORION_ID.columns[0]]
-
-# Write the preliminary information into the MPR file
-with open(file_path, "w") as file:
-    file.write('BurnupSteps     1\n')
-    file.write('0\n')  # is fresh fuel
-    file.write(f'NNuclides    {len(nuclide)}\n')
-    file.write(f'CrossSections\n')
-    file.write(f'MaxReactions    5\n') # Maximum number of reactions for a single nuclide, set to 5 as only interested in MT = 16, 17, 18, 102, 103
-    
-    # Iterates through each row of the pandas dataframe and writes the data into the .txt file in the MPR file format
-    for i, row in df.iterrows():
-        save_to_MPR(orion_id[i], 
-                    zaid[i], 
-                    nuclide[i], 
-                    NumberReactions[i], 
-                    daughter_16[i], 
-                    daughter_17[i], 
-                    daughter_18[i], 
-                    daughter_102[i], 
-                    daughter_103[i], 
-                    NumberParents[i], 
-                    parent_16[i], 
-                    parent_17[i],
-                    parent_102[i], 
-                    parent_103[i],
-                    nuclide_in_df)
+element_symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'A
