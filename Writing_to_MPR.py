@@ -68,7 +68,7 @@ def build_parent_daughter_name(id_number):
     The ZAID is in the form ZZAAAI, so the function first removes I(=0), and then sets Z to the first 2 digits and A as the rest, whilst removing all leading/trailing zeroes.
 
     Args:
-        id_number (float): The ZAID number of tha parent/daughter nuclide, in the form 10010.0.
+        id_number (float): The ZAID number of the parent/daughter nuclide, in the form 10010.0.
 
     Returns:
         nuclear_notation (str): The name of the parent/daughter nuclide in the form PU243.
