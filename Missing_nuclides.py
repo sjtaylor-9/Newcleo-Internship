@@ -15,12 +15,12 @@ import pandas as pd
 # -------------  Main Code  ------------ #
 
 # Read in the .csv file containing the ENDF nuclide information and stores it as a pandas dataframe. Assigns the first column to the nuclide name variable
-dir_to_endf_nuclides = r'/Users/sam/Documents/NewcleoInternship/ZAID_results.csv'
+dir_to_endf_nuclides = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data/ZAID_results.csv'
 df_endf = pd.read_csv(dir_to_endf_nuclides)
 nuclides_in_endf = df_endf[df_endf.columns[0]]
 
 # Read in the .xlsx file containing the ORION nuclide information and stores it as a pandas dataframe.
-dir_to_orion_nuclides = r'/Users/sam/Documents/NewcleoInternship/orion_nuclides_list.xlsx'
+dir_to_orion_nuclides =r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/orion_nuclides_list.xlsx'
 df_ORION_nuclides = pd.read_excel(dir_to_orion_nuclides, header = None)
 # Columns in excel file do not contain headers so create them here
 df_ORION_nuclides.columns = ['Nuclide Name', 'Buffer Mass']
