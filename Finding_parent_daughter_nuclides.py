@@ -35,23 +35,28 @@ def build_nuclide_name(nuclide):
     # Nuclide name in form PU243
     nuclear_notation = element_symbols[int(atomic_number)-1].upper() + str(mass_number)
 
+    if (nuclide % 10 == 1):
+        nuclear_notation = nuclear_notation + "(1)"
+    elif (nuclide % 10 == 2):
+        nuclear_notation = nuclear_notation + "(2)"
+    
     return nuclear_notation, atomic_number, mass_number
 
 def build_nuclide_ID(atomic_number, mass_number):
     """
     Constructs the ZAID of the nuclide from it's atomic and mass numbers. The ZAIDs are used to identify the nuclides.
-    The ZAID is in the form ZZAAI, where Z is the atomic number and A is the mass number. I > 0 identifies that an isotope is metastable. In this code I is set to 0 since I > 0 nuclides are not in the ENDF databse.
+    The ZAID is in the form ZZAAAI, where Z is the atomic number and A is the mass number. I > 0 identifies that an isotope is metastable.
 
     Args:
         atomic_number (int): The atomic number of the nuclide, Z.
         mass_number (int): The mass number of the nuclide, A.
 
     Returns:
-        ID (int): The ZAID number of the nuclide in the form ZZAAAI (I is set to 0, I > 0 for metastable isotopes).
+        ID (int): The ZAID number of the nuclide in the form ZZAAAI (I = 0 is the ground state nuclide and I > 0 for metastable isomers).
     """
+    # Nuclear IDs in form ZZAAAI, so calculated as 10,000Z + A * 10 + I, where I = 0 is the ground state and I = 1 and 2 are metastable isomers.
     ID = 1000 * int(atomic_number)
     ID = ID + int(mass_number)
-    # Nuclear IDs in form ZZAAAI, where I = 0,1,2. I > 0 is for metastable istotopes. For now ignoring these as not in ENDF database.
     ID = ID * 10
     
     return ID
@@ -74,6 +79,7 @@ def calculate_parent(atomic_number, mass_number, nuclide_in_dataframe):
     # If nuclide is daughter of reaction 16 (n,2n) then parent should have A+1
     parent_A_16 = mass_number + 1
     parent_16 = build_nuclide_ID(atomic_number, parent_A_16)
+    
     # If nuclide is daughter of reaction 17 (n,3n) then parent should have A+2
     parent_A_17 = mass_number + 2
     parent_17 = build_nuclide_ID(atomic_number, parent_A_17)
@@ -223,19 +229,129 @@ def if_parent_daughter_exist_in_orion(zaid_of_parent_daughter, df_containing_nuc
     
     return parent_daughter_exists_in_orion
 
-# -------------  Main Code  ------------ #
+def metastable_parent(zaid_metastable_precursor, nuclide_in_dataframe):
+    """_summary_
 
+    Args:
+        zaid_metastable_precursor (_type_): _description_
+        nuclide_in_dataframe (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    metastable_list_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data/NNL_metastable_precursors_and_parents.csv'
+    metastable_df = pd.read_csv(metastable_list_dir, header = 0)
+    
+    # Filters through the 'ZAID' column of the pandas dataframe containing the metastable nuclides and extracts the row that has the same ZAID as the precursor nuclide
+    examined_precursor = metastable_df[(metastable_df['ZAID'] == zaid_metastable_precursor)]
+    
+    # Creates a pandas series(array) that contains the parent ZAIDs of the metastable precursor
+    metastable_parent_list = pd.Series(examined_precursor.iloc[:, 3: 14].values.flatten().tolist())
+    # The parents with 'NA' in the .csv are saved as nan in the array, so these are converted back to 'NA' by lambda
+    # All of the ZAIDs are converted from floats to integers
+    metastable_parent_list = metastable_parent_list.apply(lambda x: 'NA' if pd.isna(x) else int(x))
+    # Loops through each row in the array of metastable parents and checks if they exist in the ORION database
+    # Enumerates the array so that the index of the parent is found, so that the relevant parent can be inspected
+    for i, row in enumerate(metastable_parent_list):
+        metastable_parent_exist = False
+        # The ORION database check is skipped out if the nuclide has parent ZAID == 'NA'
+        if row != 'NA':
+            metastable_parent_exist = if_parent_daughter_exist_in_orion(row, nuclide_in_dataframe, metastable_parent_exist)
+            if metastable_parent_exist == False:
+                metastable_parent_list[i] = 'NA'
+
+    return metastable_parent_list
+
+def gs_pecursor_es_parent(empty_parent_list, zaid_gs_precursor, num_parents):
+    """_summary_
+
+    Args:
+        empty_parent_list (_type_): _description_
+        zaid_gs_precursor (_type_): _description_
+        num_parents (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    reactions_of_es_precursor_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data/NNL_metastable_precursors_and_daughters.csv'
+    df_es_precursors = pd.read_csv(reactions_of_es_precursor_dir, header = 0)
+
+    # Checks to see if the ZAID of a ground state nuclide is in the list of daughter nuclides from metastable precursors
+    examined_daughter_16 = df_es_precursors[(df_es_precursors['Daughter 16 ZAID'] == zaid_gs_precursor)]
+    # If the ground state ZAID of the daughter exists in the dataframe then the metastable precursor ZAID is assigned to the relevant index in the list of parents
+    if not examined_daughter_16.empty:
+        es_precursor = examined_daughter_16['Precursor ZAID'].iloc[0]
+        if (es_precursor % 10 == 1):
+            empty_parent_list[3] = es_precursor # First excited state of parent
+            num_parents += 1
+        elif (es_precursor % 10 == 2):
+            empty_parent_list[7] = es_precursor # Second excited state of parent
+            num_parents += 1
+
+    examined_daughter_17 = df_es_precursors[(df_es_precursors['Daughter 17 ZAID'] == zaid_gs_precursor)]
+    if not examined_daughter_17.empty:
+        es_precursor = examined_daughter_17['Precursor ZAID'].iloc[0]
+        if (es_precursor % 10 == 1):
+            empty_parent_list[4] = es_precursor
+            num_parents += 1
+        elif (es_precursor % 10 == 2):
+            empty_parent_list[8] = es_precursor
+            num_parents += 1
+
+    examined_daughter_102 = df_es_precursors[(df_es_precursors['Daughter 102 ZAID'] == zaid_gs_precursor)]
+    if not examined_daughter_102.empty:
+        es_precursor = examined_daughter_102['Precursor ZAID'].iloc[0]
+        if (es_precursor % 10 == 1):
+            empty_parent_list[5] = es_precursor
+            num_parents += 1
+        elif (es_precursor % 10 == 2):
+            empty_parent_list[9] = es_precursor
+            num_parents += 1
+    
+    examined_daughter_103 = df_es_precursors[(df_es_precursors['Daughter 103 ZAID'] == zaid_gs_precursor)]
+    if not examined_daughter_103.empty:
+        es_precursor = examined_daughter_103['Precursor ZAID'].iloc[0]
+        if (es_precursor % 10 == 1):
+            empty_parent_list[6] = es_precursor
+            num_parents += 1
+        elif (es_precursor % 10 == 2):
+            empty_parent_list[10] = es_precursor
+            num_parents += 1  
+    
+    return empty_parent_list, num_parents
+
+def is_isomer_in_NNL(metastable_zaid, exists_in_NNL):
+    """_summary_
+
+    Args:
+        metastable_zaid (_type_): _description_
+        exists_in_NNL (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    metastable_list_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data/NNL_metastable_precursors_and_parents.csv'
+    metastable_df = pd.read_csv(metastable_list_dir, header = 0)
+    
+    # Filters through the 'ZAID' column of the pandas dataframe containing the metastable nuclides and extracts the row that has the same ZAID as the precursor nuclide
+    examined_precursor = metastable_df[(metastable_df['ZAID'] == metastable_zaid)]
+
+    if examined_precursor.empty:
+        exists_in_NNL = False
+
+    return exists_in_NNL
+# -------------  Main Code  ------------ #
 # Define the Element Symbols
 element_symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md']
 
 # Opens the csv file containing the ENDF and JEFF reaction data for each nuclide and stores it in an array
-reaction_data_dir = r'/Users/sam/Documents/NewcleoInternship/'
-endf_jeff_data = r'LFR30_MPR_reactiondata_withjeff.csv'
+reaction_data_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data'
+endf_jeff_data = r'/LFR30_all_reactiondata.csv'
 reaction_file = reaction_data_dir + endf_jeff_data
 reaction_data = np.genfromtxt(reaction_file, comments = '%', delimiter = ',', skip_header = 1)
 
 # Opens the excel file containing the ORION IDs for each nuclide and loads it in a pandas dataframe
-ORION_ID_dir = r'/Users/sam/Documents/NewcleoInternship/orion_nuclides_list.xlsx'
+ORION_ID_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/orion_nuclides_list.xlsx'
 df_ORION_ID = pd.read_excel(ORION_ID_dir, header = None)
 # Columns in excel file do not contain headers so create them here
 df_ORION_ID.columns = ['Nuclide Name', 'Buffer Mass']
@@ -266,12 +382,38 @@ for key, reactions in grouped_endf_jeff_dictionary.items():
     nuclide_characteristics = build_nuclide_name(key)
     nuclide_name = nuclide_characteristics[0]
     
-    
-    
     # Check whether the nuclide is in the ORION database at all
     orion_id, exists_in_ORION = find_ORION_ID(nuclide_name, nuclide_in_df, nuclide_in_ORION = False)
     if exists_in_ORION == True:
-        
+
+        is_metastable = key % 10
+        if is_metastable != 0:
+
+            isomer_exists_in_NNL = True
+            isomer_exists_in_NNL = is_isomer_in_NNL(key, isomer_exists_in_NNL)
+            # Check to see if the isomer exists in the list of metastable isomers in the NNL database, eg Ag117(1) is in JEFF but not NNL
+            if isomer_exists_in_NNL == True:
+                parent_list = metastable_parent(key, nuclide_in_df)
+                parent_16 = parent_list[0]
+                parent_17 = parent_list[1]
+                parent_102 = parent_list[2]
+                parent_103 = parent_list[3]
+                NumberParents = 1
+                for parent in parent_list:
+                    if parent != 'NA':
+                        NumberParents = NumberParents + 1
+            else:
+                # If the isomer is not in the NNL database then it's parents are all set to 'NA' and NumberParents = 0
+                NumberParents = 0
+                parent_list = pd.Series(['NA'] * 11)
+        else:
+            NumberParents, parent_16, parent_17, parent_102, parent_103 = calculate_parent(nuclide_characteristics[1],
+                                                                                            nuclide_characteristics[2],
+                                                                                            nuclide_in_df)
+            parent_list = pd.Series(['NA'] * 11)
+            parent_list, NumberParents = gs_pecursor_es_parent(parent_list, key, NumberParents)
+
+
         reaction_16_exists = reaction_17_exists = reaction_18_exists = reaction_102_exists = reaction_103_exists = False
         # Iterates through each column in the arrays containing the reaction data
         for column in reactions:
@@ -322,17 +464,14 @@ for key, reactions in grouped_endf_jeff_dictionary.items():
             daughter_102 = 'NA'
         if reaction_103_exists == False:
             daughter_103 = 'NA'
-            
+
         # Calculate the number of reactions for which the nuclide is the parent
         daughter_ids_array = [daughter_16, daughter_17, daughter_18, daughter_102, daughter_103]
         NumberReactions = 0
         for value in daughter_ids_array:
             if value != 'NA':
                 NumberReactions = NumberReactions + 1
-        
-        NumberParents, parent_16, parent_17, parent_102, parent_103 = calculate_parent(nuclide_characteristics[1], nuclide_characteristics[2], nuclide_in_df)
 
-        
         nuclide_data.append({'Nuclide Name': nuclide_name, 
                                     'Nuclide ZAID': int(key),
                                     'ORION ID': orion_id, 
@@ -346,7 +485,15 @@ for key, reactions in grouped_endf_jeff_dictionary.items():
                                     'Reaction 16 Parent ZAID': parent_16, 
                                     'Reaction 17 Parent ZAID': parent_17, 
                                     'Reaction 102 Parent ZAID': parent_102, 
-                                    'Reaction 103 Parent ZAID': parent_103,})
+                                    'Reaction 103 Parent ZAID': parent_103,
+                                    'Reaction 16 Parent(M) ZAID': parent_list[3],
+                                    'Reaction 17 Parent(M) ZAID': parent_list[4],
+                                    'Reaction 102 Parent(M) ZAID': parent_list[5],
+                                    'Reaction 103 Parent(M) ZAID': parent_list[6],
+                                    'Reaction 16 Parent(2M) ZAID': parent_list[7],
+                                    'Reaction 17 Parent(2M) ZAID': parent_list[8],
+                                    'Reaction 102 Parent(2M) ZAID': parent_list[9],
+                                    'Reaction 103 Parent(2M) ZAID': parent_list[10]})
 
         print('Appending data for', nuclide_name)
 
@@ -358,6 +505,6 @@ for key, reactions in grouped_endf_jeff_dictionary.items():
 df = pd.DataFrame(nuclide_data)
 
 # Save the whole array to a csv file
-file_name = 'ZAID_results.csv'
+file_name = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data/ZAID_results.csv'
 df.to_csv(file_name, index = False)
 
