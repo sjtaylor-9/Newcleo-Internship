@@ -108,8 +108,8 @@ def get_cross_section(zaid_in_MPR, reaction):
         xs (float): The one-group cross-section of the specific reaction.
     """
     # Opens the csv file containing the cross-section data for each nuclide and stores it in an array
-    xs_data_dir = r'C:\Users\sam.taylor\OneDrive - Newcleo\Documents\Modelling_LFR\Generating_MPR_file\LFR30_Reaction_Data'
-    reactor_type = r'\LFR30_MPR_reactiondata_withjeff.csv'
+    xs_data_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data'
+    reactor_type = r'/LFR30_all_reactiondata.csv'
     xs_file = xs_data_dir + reactor_type
     xs_data = np.genfromtxt(xs_file, comments = '%', delimiter = ',')
     # Iterates through the csv file until the required reaction is found and the cross-section is outputted
@@ -120,7 +120,29 @@ def get_cross_section(zaid_in_MPR, reaction):
         
     return xs
 
-def save_to_MPR(ORION, nuclide_ID, name, NumberReactions, daughter_16, daughter_17, daughter_18, daughter_102, daughter_103, NumberParents, parent_16, parent_17, parent_102, parent_103, orion_dataframe):
+def save_to_MPR(ORION, 
+                nuclide_ID, 
+                name, 
+                NumberReactions, 
+                daughter_16,
+                daughter_17,
+                daughter_18,
+                daughter_102,
+                daughter_103,
+                NumberParents,
+                parent_16,
+                parent_17,
+                parent_102,
+                parent_103,
+                parent_16_1m,
+                parent_17_1m,
+                parent_102_1m,
+                parent_103_1m,
+                parent_16_2m,
+                parent_17_2m,
+                parent_102_2m,
+                parent_103_2m,
+                orion_dataframe):
     """
     Writes all of the nuclide information and reaction data to the .txt file in the format of the MPR file.
 
@@ -167,22 +189,61 @@ def save_to_MPR(ORION, nuclide_ID, name, NumberReactions, daughter_16, daughter_
         aligned_orion = "{:>{width}}".format(parent_orion_102, width = width_parent_orion)
         aligned_zaid = "{:>{width}}".format(int(parent_102), width = width_parent_zaid) # The parent ZAID is changed to type int to remove the .0
         file.write(f"{aligned_orion}{aligned_zaid}\n")
+    if not np.isnan(parent_102_1m):
+        parent_orion_102_1m = calculate_parent_orion(parent_102_1m, orion_dataframe)
+        aligned_orion = "{:>{width}}".format(parent_orion_102_1m, width = width_parent_orion)
+        aligned_zaid = "{:>{width}}".format(int(parent_102_1m), width = width_parent_zaid) # The parent ZAID is changed to type int to remove the .0
+        file.write(f"{aligned_orion}{aligned_zaid}\n")
+    if not np.isnan(parent_102_2m):
+        parent_orion_102_2m = calculate_parent_orion(parent_102_2m, orion_dataframe)
+        aligned_orion = "{:>{width}}".format(parent_orion_102_2m, width = width_parent_orion)
+        aligned_zaid = "{:>{width}}".format(int(parent_102_2m), width = width_parent_zaid) # The parent ZAID is changed to type int to remove the .0
+        file.write(f"{aligned_orion}{aligned_zaid}\n")
     if not np.isnan(parent_16):
         parent_orion_16 = calculate_parent_orion(parent_16, orion_dataframe)
         aligned_orion = "{:>{width}}".format(parent_orion_16, width = width_parent_orion)
         aligned_zaid = "{:>{width}}".format(int(parent_16), width = width_parent_zaid)
+        file.write(f"{aligned_orion}{aligned_zaid}\n")
+    if not np.isnan(parent_16_1m):
+        parent_orion_16_1m = calculate_parent_orion(parent_16_1m, orion_dataframe)
+        aligned_orion = "{:>{width}}".format(parent_orion_16_1m, width = width_parent_orion)
+        aligned_zaid = "{:>{width}}".format(int(parent_16_1m), width = width_parent_zaid)
+        file.write(f"{aligned_orion}{aligned_zaid}\n")
+    if not np.isnan(parent_16_2m):
+        parent_orion_16_2m = calculate_parent_orion(parent_16_2m, orion_dataframe)
+        aligned_orion = "{:>{width}}".format(parent_orion_16_2m, width = width_parent_orion)
+        aligned_zaid = "{:>{width}}".format(int(parent_16_2m), width = width_parent_zaid)
         file.write(f"{aligned_orion}{aligned_zaid}\n")
     if not np.isnan(parent_17):
         parent_orion_17 = calculate_parent_orion(parent_17, orion_dataframe)
         aligned_orion = "{:>{width}}".format(parent_orion_17, width = width_parent_orion)
         aligned_zaid = "{:>{width}}".format(int(parent_17), width = width_parent_zaid)
         file.write(f"{aligned_orion}{aligned_zaid}\n")
+    if not np.isnan(parent_17_1m):
+        parent_orion_17_1m = calculate_parent_orion(parent_17_1m, orion_dataframe)
+        aligned_orion = "{:>{width}}".format(parent_orion_17_1m, width = width_parent_orion)
+        aligned_zaid = "{:>{width}}".format(int(parent_17_1m), width = width_parent_zaid)
+        file.write(f"{aligned_orion}{aligned_zaid}\n")
+    if not np.isnan(parent_17_2m):
+        parent_orion_17_2m = calculate_parent_orion(parent_17_2m, orion_dataframe)
+        aligned_orion = "{:>{width}}".format(parent_orion_17_2m, width = width_parent_orion)
+        aligned_zaid = "{:>{width}}".format(int(parent_17_2m), width = width_parent_zaid)
+        file.write(f"{aligned_orion}{aligned_zaid}\n")
     if not np.isnan(parent_103):
         parent_orion_103 = calculate_parent_orion(parent_103, orion_dataframe)
         aligned_orion = "{:>{width}}".format(parent_orion_103, width = width_parent_orion)
         aligned_zaid = "{:>{width}}".format(int(parent_103), width = width_parent_zaid)
         file.write(f"{aligned_orion}{aligned_zaid}\n")
-    
+    if not np.isnan(parent_103_1m):
+        parent_orion_103_1m = calculate_parent_orion(parent_103_1m, orion_dataframe)
+        aligned_orion = "{:>{width}}".format(parent_orion_103_1m, width = width_parent_orion)
+        aligned_zaid = "{:>{width}}".format(int(parent_103_1m), width = width_parent_zaid)
+        file.write(f"{aligned_orion}{aligned_zaid}\n")
+    if not np.isnan(parent_103_2m):
+        parent_orion_103_2m = calculate_parent_orion(parent_103_2m, orion_dataframe)
+        aligned_orion = "{:>{width}}".format(parent_orion_103_2m, width = width_parent_orion)
+        aligned_zaid = "{:>{width}}".format(int(parent_103_2m), width = width_parent_zaid)
+        file.write(f"{aligned_orion}{aligned_zaid}\n")
     # Adds the relevant data for the daughter nuclides in the required format
     # The ORION ID of the daughter nuclide must be right aligned with a total width of 7 (6 preceeding spaces for 1 digit) and ZAID must be right aligned with a total width of 8
     width_orion = 7
@@ -230,7 +291,7 @@ def save_to_MPR(ORION, nuclide_ID, name, NumberReactions, daughter_16, daughter_
 element_symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es']
 
 # Reads in the csv file containing the data to be saved to the MPR file and assigns it to an array
-file_dir = r'"C:\Users\sam.taylor\OneDrive - Newcleo\Documents\Modelling_LFR\Generating_MPR_file\LFR30_Reaction_Data\ZAID_results.csv"'
+file_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data/ZAID_results.csv'
 df = pd.read_csv(file_dir, header = 0)
 
 # Assigns each column of csv file to a variable
@@ -248,14 +309,22 @@ parent_16 = df[df.columns[10]]
 parent_17 = df[df.columns[11]]
 parent_102 = df[df.columns[12]]
 parent_103 = df[df.columns[13]]
+parent_16_1m = df[df.columns[14]]
+parent_17_1m = df[df.columns[15]]
+parent_102_1m = df[df.columns[16]]
+parent_103_1m = df[df.columns[17]]
+parent_16_2m = df[df.columns[18]]
+parent_17_2m = df[df.columns[19]]
+parent_102_2m = df[df.columns[20]]
+parent_103_2m = df[df.columns[21]]
 
 # Sort the dataframe so that it is in the order of ascending ORION IDs
 df = df.sort_values(by=df.columns[2])
 
-file_path = r'C:\Users\sam.taylor\OneDrive - Newcleo\Documents\Modelling_LFR\Generating_MPR_file\LFR30_MPR.txt'
+file_path = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_MPR.txt'
 
 # Opens the excel file containing the ORION IDs for each nuclide and loads it in a pandas dataframe
-ORION_ID_dir = r'C:\Users\sam.taylor\OneDrive - Newcleo\Documents\Modelling_LFR\Generating_MPR_fileorion_nuclides_list.xlsx'
+ORION_ID_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/orion_nuclides_list.xlsx'
 df_ORION_ID = pd.read_excel(ORION_ID_dir, header = None)
 # Columns in excel file do not contain headers so create them here
 df_ORION_ID.columns = ['Nuclide Name', 'Buffer Mass']
@@ -264,11 +333,11 @@ nuclide_in_df = df_ORION_ID[df_ORION_ID.columns[0]]
 # Write the preliminary information into the MPR file
 with open(file_path, "w") as file:
     file.write('BurnupSteps     1\n')
-    file.write('0\n')  # is fresh fuel
+    file.write('0\n')  # 0 is fresh fuel, i.e. first burn-up
     file.write(f'NNuclides    {len(nuclide)}\n')
     file.write(f'CrossSections\n')
-    file.write(f'MaxReactions    5\n') # Maximum number of reactions for a single nuclide, set to 5 as only interested in MT = 16, 17, 18, 102, 103
-    
+    file.write(f'MaxReactions    {max(NumberReactions)}\n') # Maximum number of reactions for a single nuclide, set to 5 as only interested in MT = 16, 17, 18, 102, 103
+
     # Iterates through each row of the pandas dataframe and writes the data into the .txt file in the MPR file format
     for i, row in df.iterrows():
         save_to_MPR(orion_id[i], 
@@ -285,4 +354,14 @@ with open(file_path, "w") as file:
                     parent_17[i],
                     parent_102[i], 
                     parent_103[i],
+                    parent_16_1m[i],
+                    parent_17_1m[i],
+                    parent_102_1m[i],
+                    parent_103_1m[i],
+                    parent_16_2m[i],
+                    parent_17_2m[i],
+                    parent_102_2m[i],
+                    parent_103_2m[i],
                     nuclide_in_df)
+        
+
