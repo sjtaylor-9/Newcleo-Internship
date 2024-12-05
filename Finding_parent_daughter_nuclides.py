@@ -246,7 +246,7 @@ def metastable_parent(zaid_metastable_precursor, nuclide_in_dataframe):
     examined_precursor = metastable_df[(metastable_df['ZAID'] == zaid_metastable_precursor)]
     
     # Creates a pandas series(array) that contains the parent ZAIDs of the metastable precursor
-    metastable_parent_list = pd.Series(examined_precursor.iloc[:, 3: 14].values.flatten().tolist())
+    metastable_parent_list = pd.Series(examined_precursor.iloc[:, 3: 15].values.flatten().tolist())
     # The parents with 'NA' in the .csv are saved as nan in the array, so these are converted back to 'NA' by lambda
     # All of the ZAIDs are converted from floats to integers
     metastable_parent_list = metastable_parent_list.apply(lambda x: 'NA' if pd.isna(x) else int(x))
@@ -282,27 +282,27 @@ def gs_pecursor_es_parent(empty_parent_list, zaid_gs_precursor, num_parents):
     if not examined_daughter_16.empty:
         es_precursor = examined_daughter_16['Precursor ZAID'].iloc[0]
         if (es_precursor % 10 == 1):
-            empty_parent_list[3] = es_precursor # First excited state of parent
+            empty_parent_list[4] = es_precursor # First excited state of parent
             num_parents += 1
         elif (es_precursor % 10 == 2):
-            empty_parent_list[7] = es_precursor # Second excited state of parent
+            empty_parent_list[5] = es_precursor # Second excited state of parent
             num_parents += 1
 
     examined_daughter_17 = df_es_precursors[(df_es_precursors['Daughter 17 ZAID'] == zaid_gs_precursor)]
     if not examined_daughter_17.empty:
         es_precursor = examined_daughter_17['Precursor ZAID'].iloc[0]
         if (es_precursor % 10 == 1):
-            empty_parent_list[4] = es_precursor
+            empty_parent_list[6] = es_precursor
             num_parents += 1
         elif (es_precursor % 10 == 2):
-            empty_parent_list[8] = es_precursor
+            empty_parent_list[7] = es_precursor
             num_parents += 1
 
     examined_daughter_102 = df_es_precursors[(df_es_precursors['Daughter 102 ZAID'] == zaid_gs_precursor)]
     if not examined_daughter_102.empty:
         es_precursor = examined_daughter_102['Precursor ZAID'].iloc[0]
         if (es_precursor % 10 == 1):
-            empty_parent_list[5] = es_precursor
+            empty_parent_list[8] = es_precursor
             num_parents += 1
         elif (es_precursor % 10 == 2):
             empty_parent_list[9] = es_precursor
@@ -312,11 +312,11 @@ def gs_pecursor_es_parent(empty_parent_list, zaid_gs_precursor, num_parents):
     if not examined_daughter_103.empty:
         es_precursor = examined_daughter_103['Precursor ZAID'].iloc[0]
         if (es_precursor % 10 == 1):
-            empty_parent_list[6] = es_precursor
+            empty_parent_list[10] = es_precursor
             num_parents += 1
         elif (es_precursor % 10 == 2):
-            empty_parent_list[10] = es_precursor
-            num_parents += 1  
+            empty_parent_list[11] = es_precursor
+            num_parents += 1
     
     return empty_parent_list, num_parents
 
@@ -398,21 +398,23 @@ for key, reactions in grouped_endf_jeff_dictionary.items():
                 parent_17 = parent_list[1]
                 parent_102 = parent_list[2]
                 parent_103 = parent_list[3]
-                NumberParents = 1
+                NumberParents = 0
                 for parent in parent_list:
                     if parent != 'NA':
                         NumberParents = NumberParents + 1
             else:
                 # If the isomer is not in the NNL database then it's parents are all set to 'NA' and NumberParents = 0
                 NumberParents = 0
-                parent_list = pd.Series(['NA'] * 11)
+                parent_list = pd.Series(['NA'] * 12)
+                # Resets the values of these variables. This is necessary as if the precursor nuclide prior has parents in any of these reactions then a metastable nuclide that exists in JEFF but not NNL must have all parents assigned to 'NA'
+                parent_16 = parent_17 = parent_102 = parent_103 = 'NA'
+
         else:
             NumberParents, parent_16, parent_17, parent_102, parent_103 = calculate_parent(nuclide_characteristics[1],
                                                                                             nuclide_characteristics[2],
                                                                                             nuclide_in_df)
-            parent_list = pd.Series(['NA'] * 11)
+            parent_list = pd.Series(['NA'] * 12)
             parent_list, NumberParents = gs_pecursor_es_parent(parent_list, key, NumberParents)
-
 
         reaction_16_exists = reaction_17_exists = reaction_18_exists = reaction_102_exists = reaction_103_exists = False
         # Iterates through each column in the arrays containing the reaction data
@@ -471,7 +473,10 @@ for key, reactions in grouped_endf_jeff_dictionary.items():
         for value in daughter_ids_array:
             if value != 'NA':
                 NumberReactions = NumberReactions + 1
-
+        if key == 471181:
+            print('Hi')
+            print(parent_list)
+            print(parent_102)
         nuclide_data.append({'Nuclide Name': nuclide_name, 
                                     'Nuclide ZAID': int(key),
                                     'ORION ID': orion_id, 
@@ -486,14 +491,14 @@ for key, reactions in grouped_endf_jeff_dictionary.items():
                                     'Reaction 17 Parent ZAID': parent_17, 
                                     'Reaction 102 Parent ZAID': parent_102, 
                                     'Reaction 103 Parent ZAID': parent_103,
-                                    'Reaction 16 Parent(M) ZAID': parent_list[3],
-                                    'Reaction 17 Parent(M) ZAID': parent_list[4],
-                                    'Reaction 102 Parent(M) ZAID': parent_list[5],
-                                    'Reaction 103 Parent(M) ZAID': parent_list[6],
-                                    'Reaction 16 Parent(2M) ZAID': parent_list[7],
-                                    'Reaction 17 Parent(2M) ZAID': parent_list[8],
+                                    'Reaction 16 Parent(M) ZAID': parent_list[4],
+                                    'Reaction 16 Parent(2M) ZAID': parent_list[5],
+                                    'Reaction 17 Parent(M) ZAID': parent_list[6],
+                                    'Reaction 17 Parent(2M) ZAID': parent_list[7],
+                                    'Reaction 102 Parent(M) ZAID': parent_list[8],
                                     'Reaction 102 Parent(2M) ZAID': parent_list[9],
-                                    'Reaction 103 Parent(2M) ZAID': parent_list[10]})
+                                    'Reaction 103 Parent(M) ZAID': parent_list[10],
+                                    'Reaction 103 Parent(2M) ZAID': parent_list[11]})
 
         print('Appending data for', nuclide_name)
 
