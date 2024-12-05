@@ -287,7 +287,7 @@ def save_to_MPR(ORION,
     return
 # -------------  Main Code  ------------ #
 
-# Define the Element Symbols. Eisteinium included to prevent list index issues when calculating the parent nuclide name of Cf.
+# Define the Element Symbols. Eisteinium included to prevent list index iss ues when calculating the parent nuclide name of Cf.
 element_symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es']
 
 # Reads in the csv file containing the data to be saved to the MPR file and assigns it to an array
@@ -310,12 +310,12 @@ parent_17 = df[df.columns[11]]
 parent_102 = df[df.columns[12]]
 parent_103 = df[df.columns[13]]
 parent_16_1m = df[df.columns[14]]
-parent_17_1m = df[df.columns[15]]
-parent_102_1m = df[df.columns[16]]
-parent_103_1m = df[df.columns[17]]
-parent_16_2m = df[df.columns[18]]
-parent_17_2m = df[df.columns[19]]
-parent_102_2m = df[df.columns[20]]
+parent_16_2m = df[df.columns[15]]
+parent_17_1m = df[df.columns[16]]
+parent_17_2m = df[df.columns[17]]
+parent_102_1m = df[df.columns[18]]
+parent_102_2m = df[df.columns[19]]
+parent_103_1m = df[df.columns[20]]
 parent_103_2m = df[df.columns[21]]
 
 # Sort the dataframe so that it is in the order of ascending ORION IDs
