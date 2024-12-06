@@ -1,3 +1,15 @@
+"""
+cumulative_fuel_mass.py
+
+This script is responsible for plotting the cumulative mass distributions of the Pu fuel that is sent to the LFR200 fleet.
+Plots are generated to show the global increase in cumulative Pu mass across the full lifetime of the fleet, and also the mass distributions of the individual nuclides in the Pu fuel vector (Pu238, Pu239, Pu240, Pu241, Pu242, Am241).
+On the graph displaying the total Pu mass the points at which the full fleet has been deployed, when the first set of reactors has been shutdown, and when the UK stockpile of Pu has been exhausted (assuming a once through cycle) are plotted.
+The Uk stockpile of Pu, first reactor deployment date, hold-up time of the MOX fuel fabrication, and reactor lifetime are set as variables so that the outcome of changing these parameters can be quickly determined, should they change in the newcleo business plan.
+The data containing masses of each nuclide at each timestep are loaded into a pandas dataframe from the Pu_fuel_mass_per_year.csv. This .csv file is generated from an ORION simulation that models the LFR200 fleet in a once through scenario.
+
+Author: Sam Taylor (sam.taylor@newcleo.com)
+Last Edited: 06/12/2024
+"""
 # ---------  Import Libraries  --------- #
 import pandas as pd
 import matplotlib as mpl
@@ -6,13 +18,17 @@ mpl.rcParams['font.serif'] = ['Times New Roman']
 import numpy as np
 # -------------  Functions  ------------ #
 def cdf_total_fuel_mass(dataframe, first_reactor_deployed):
-    """_summary_
+    """
+    Plots the cumulative mass distribution as a function of time since the first set of reactors in the fleet started to generate power.
+    On the plot the point at which the UK Pu storage has been exhausted is plotted. This is assuming a once through scenario.
+    In addition, the points at which all reactors in the fleet have been deployed and when the set of reactors are shutdown are plotted.
+    The resultant figure is saved as a .png file in the output directory.
 
     Args:
-        dataframe (_type_): _description_
-        first_reactor_deployed (_type_): _description_
+        dataframe (pandas dataframe): The pandas dataframe that contains the masses of each nuclide in the reactor fuel at each timestep of the ORION scenario.
+        first_reactor_deployed (int): The year in which the first set of reactors are deployed.
     """
-    # These parameters are allowed to vary to test supplement business plan
+    # These parameters are allowed to vary to incase deployment plan changes
     uk_Pu_stockpile = 140
     last_deployment_year = 2050
     reactor_lifetime = 60
@@ -21,7 +37,7 @@ def cdf_total_fuel_mass(dataframe, first_reactor_deployed):
     # Calculate the cumulative total Pu mass
     dataframe['Cumulative Total Pu'] = dataframe['Total Pu'].cumsum()
     
-    # Plots the cumulative total as function of data
+    # Plots the cumulative total as function of date
     fig = plt.figure(figsize = (10, 6))
     plt.plot(dataframe['Date'],
              dataframe['Cumulative Total Pu'],
@@ -77,7 +93,15 @@ def cdf_total_fuel_mass(dataframe, first_reactor_deployed):
     plt.savefig(file_path, bbox_inches = "tight", dpi = 300)
     return
 def cdf_individual_fuel_masses(dataframe, first_reactor_deployed):
-    
+    """
+    Plots the cumulative mass distributions of the indiviudal nuclides in the Pu vector (Pu238, Pu239, Pu240, Pu241, Pu242, Am241) as functions of time since the first set of reactors in the fleet started to generate power.
+    The distributions are also plotted on a logy scale since Pu239 dominates the total mass.
+    The resultant figures are saved as .png files in the output directory.
+
+    Args:
+        dataframe (pandas dataframe): The pandas dataframe that contains the masses of each nuclide in the reactor fuel at each timestep of the ORION scenario.
+        first_reactor_deployed (int): The year in which the first set of reactors are deployed.
+    """
     # Calculate the cumulative total mass of each Pu isotope and Am241
     dataframe['Cumulative Total Pu238'] = dataframe['3+PU238'].cumsum()
     dataframe['Cumulative Total Pu239'] = dataframe['3+PU239'].cumsum()
@@ -86,7 +110,7 @@ def cdf_individual_fuel_masses(dataframe, first_reactor_deployed):
     dataframe['Cumulative Total Pu242'] = dataframe['3+PU242'].cumsum()
     dataframe['Cumulative Total Am241'] = dataframe['3+AM241'].cumsum()
 
-    # Plots the cumulative total as function of data
+    # Plots the cumulative totals as functions of date
     fig = plt.figure(figsize = (10, 6))
     plt.plot(dataframe['Date'],
              dataframe['Cumulative Total Pu238'],
@@ -109,11 +133,11 @@ def cdf_individual_fuel_masses(dataframe, first_reactor_deployed):
              color = 'purple',
              label = 'Pu242')
     plt.plot(dataframe['Date'],
-             dataframe['Cumulative Total Pu238'],
+             dataframe['Cumulative Total Am241'],
              color = 'orange',
              label = 'Am241')
 
-    # Define axes limits
+    # Define x axis limit
     plt.xlim(first_reactor_deployed, dataframe['Date'].max())
     
     # Axes and legend labels
@@ -136,7 +160,7 @@ def cdf_individual_fuel_masses(dataframe, first_reactor_deployed):
 file_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/LFR200_Simulation/Testing_Reactor_Fleet/Pu_fuel_mass_per_year.csv'
 df = pd.read_csv(file_dir, header = 0)
 
-# Set these as variables so can easil change if deployment schedule changes
+# Set these as variables so can easily change if deployment schedule changes
 first_deployment_year = 2033
 fuel_fabrication_time = 2
 
