@@ -11,7 +11,73 @@ Last Edited: 22/11/2024
 # ---------  Import Libraries  --------- #
 import numpy as np
 import pandas as pd
+import argparse
+import os
 # -------------  Functions  ------------ #
+def parse_arguments():
+    """
+    Parses the arguments needed along the code. Arguments:
+
+    --path                  Used to specify the directory in which the one-group cross-section data should be written. It is not required,
+                            in the case it is not specified, the default path is the current working directory.
+    --cross_section_data    Used to specify the directory in which the public data regarding the ENDF and JEFF reaction cross-sections can be found.
+    --reaction_data     
+    
+    Returns the parsed arguments.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--reactor",
+        type = str,
+        choices = ['LFR30', 'LFR200'],
+        required = True,
+        help = 'flag to set whether the LFR30 or LFR200 is to be examined'
+    )
+    parser.add_argument(
+        "--enrichment_zone",
+        type = str,
+        choices = ['inner', 'middle', 'outer', 'FA'],
+        required = True,
+        help = 'flag to set which enrichment zone in the LFR200 is to be examined'
+    )
+    parser.add_argument(
+        "--path",
+        type=dir_path,
+        required=False,
+        default=os.getcwd(),
+        help="flag to set the path where the output files should be written to"
+    )
+    parser.add_argument(
+        "--cross_section_data",
+        type=dir_path,
+        required=True,
+        help="flag to set the path where the input cross-section data should be found"
+    )
+    parser.add_argument(
+        "--reaction_data",
+        type=dir_path,
+        required=True,
+        help="flag to set the path where the input reaction data should be found"
+    )
+    parser.add_argument(
+        "--burnup",
+        type = str,
+        choices = ['BoL', 'EoL', 'single'],
+        required = True,
+        help = 'flag to set which enrichment zone in the LFR200 is to be examined'
+    )
+    return parser.parse_args()
+
+def dir_path(string):
+    '''
+    Checks if a given string is the path to a directory.
+    If affirmative, returns the string. If negative, gives an error.
+    '''
+    if os.path.isdir(string):
+        return string
+    else:
+        raise NotADirectoryError(string)
+
 def build_nuclide_name(nuclide):
     """
     Constructs the name of the nuclide in the form PU243 from it's ZAID.
@@ -239,7 +305,7 @@ def metastable_parent(zaid_metastable_precursor, nuclide_in_dataframe):
     Returns:
         _type_: _description_
     """
-    metastable_list_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data/NNL_metastable_precursors_and_parents.csv'
+    metastable_list_dir = f'{args.reaction_data}/NNL_metastable_precursors_and_parents.csv'
     metastable_df = pd.read_csv(metastable_list_dir, header = 0)
     
     # Filters through the 'ZAID' column of the pandas dataframe containing the metastable nuclides and extracts the row that has the same ZAID as the precursor nuclide
@@ -273,7 +339,7 @@ def gs_pecursor_es_parent(empty_parent_list, zaid_gs_precursor, num_parents):
     Returns:
         _type_: _description_
     """
-    reactions_of_es_precursor_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data/NNL_metastable_precursors_and_daughters.csv'
+    reactions_of_es_precursor_dir = f'{args.reaction_data}/NNL_metastable_precursors_and_daughters.csv'
     df_es_precursors = pd.read_csv(reactions_of_es_precursor_dir, header = 0)
 
     # Checks to see if the ZAID of a ground state nuclide is in the list of daughter nuclides from metastable precursors
@@ -330,7 +396,7 @@ def is_isomer_in_NNL(metastable_zaid, exists_in_NNL):
     Returns:
         _type_: _description_
     """
-    metastable_list_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data/NNL_metastable_precursors_and_parents.csv'
+    metastable_list_dir = f'{args.reaction_data}/NNL_metastable_precursors_and_parents.csv'
     metastable_df = pd.read_csv(metastable_list_dir, header = 0)
     
     # Filters through the 'ZAID' column of the pandas dataframe containing the metastable nuclides and extracts the row that has the same ZAID as the precursor nuclide
@@ -341,17 +407,16 @@ def is_isomer_in_NNL(metastable_zaid, exists_in_NNL):
 
     return exists_in_NNL
 # -------------  Main Code  ------------ #
+args = parse_arguments()
 # Define the Element Symbols
 element_symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md']
 
 # Opens the csv file containing the ENDF and JEFF reaction data for each nuclide and stores it in an array
-reaction_data_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data'
-endf_jeff_data = r'/LFR30_all_reactiondata.csv'
-reaction_file = reaction_data_dir + endf_jeff_data
+reaction_file = f'{args.cross_section_data}/{args.reactor}_{args.enrichment_zone}_{args.burnup}_all_reactiondata.csv'
 reaction_data = np.genfromtxt(reaction_file, comments = '%', delimiter = ',', skip_header = 1)
 
 # Opens the excel file containing the ORION IDs for each nuclide and loads it in a pandas dataframe
-ORION_ID_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/orion_nuclides_list.xlsx'
+ORION_ID_dir = f'{args.reaction_data}/orion_nuclides_list.xlsx'
 df_ORION_ID = pd.read_excel(ORION_ID_dir, header = None)
 # Columns in excel file do not contain headers so create them here
 df_ORION_ID.columns = ['Nuclide Name', 'Buffer Mass']
@@ -510,6 +575,6 @@ for key, reactions in grouped_endf_jeff_dictionary.items():
 df = pd.DataFrame(nuclide_data)
 
 # Save the whole array to a csv file
-file_name = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data/ZAID_results.csv'
+file_name = f'{args.path}/ZAID_results.csv'
 df.to_csv(file_name, index = False)
 

@@ -11,7 +11,78 @@ Last Edited: 22/11/2024
 # ---------  Import Libraries  --------- #
 import numpy as np
 import pandas as pd
+import argparse
+import os
 # -------------  Functions  ------------ #
+def parse_arguments():
+    """
+    Parses the arguments needed along the code. Arguments:
+
+    --reactor               Used to specify which reactor out of the LFR200 and LFR30 is being examined.
+                            The argument must be one of: [LFR30, LFR200].
+    --enrichment_zone       If the LFR200 is being examined, then the enrichment zone must be specified. The data for the LFR30 neutron spectrum only describes one enrichment zone, the fuel assembly.
+                            The argument must be one of: [inner, middle, outer, FA].
+    --path                  Used to specify the directory in which the one-group cross-section data should be written. It is not required,
+                            in the case it is not specified, the default path is the current working directory.
+    --newcleo_input         Used to specify the directory in which internal newcleo inpput data should be found. This includes data such as the neutron spectra.
+    --cross_section_data    Used to specify the directory in which the public data regarding the ENDF and JEFF reaction cross-sections can be found.
+    --reaction_data
+    --burnup            
+    
+    Returns the parsed arguments.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--reactor",
+        type = str,
+        choices = ['LFR30', 'LFR200'],
+        required = True,
+        help = 'flag to set whether the LFR30 or LFR200 is to be examined'
+    )
+    parser.add_argument(
+        "--enrichment_zone",
+        type = str,
+        choices = ['inner', 'middle', 'outer', 'FA'],
+        required = True,
+        help = 'flag to set which enrichment zone in the LFR200 is to be examined'
+    )
+    parser.add_argument(
+        "--path",
+        type=dir_path,
+        required=False,
+        default=os.getcwd(),
+        help="flag to set the path where the output files should be written to"
+    )
+    parser.add_argument(
+        "--cross_section_data",
+        type=dir_path,
+        required=True,
+        help="flag to set the path where the input cross-section data should be found"
+    )
+    parser.add_argument(
+        "--reaction_data",
+        type=dir_path,
+        required=True,
+        help="flag to set the path where the input reaction data should be found"
+    )
+    parser.add_argument(
+        "--input",
+        type=dir_path,
+        required=True,
+        help="flag to set the path where the input ZAID data should be found"
+    )
+    return parser.parse_args()
+
+def dir_path(string):
+    '''
+    Checks if a given string is the path to a directory.
+    If affirmative, returns the string. If negative, gives an error.
+    '''
+    if os.path.isdir(string):
+        return string
+    else:
+        raise NotADirectoryError(string)
+
 def calculate_parent_orion(parent_zaid, orion_data):
     """
     Determines the ORION ID of the parent nuclide.
@@ -96,7 +167,7 @@ def build_parent_daughter_name(id_number):
     nuclear_notation = element_symbols[atomic_number-1].upper() + str(mass_number)
     return nuclear_notation, atomic_number, mass_number
 
-def get_cross_section(zaid_in_MPR, reaction):
+def get_cross_section(zaid_in_MPR, reaction, burnup):
     """
     Finds the one-group cross-section of the reaction from the list of cross-sections in the .csv file.
 
@@ -108,9 +179,7 @@ def get_cross_section(zaid_in_MPR, reaction):
         xs (float): The one-group cross-section of the specific reaction.
     """
     # Opens the csv file containing the cross-section data for each nuclide and stores it in an array
-    xs_data_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data'
-    reactor_type = r'/LFR30_all_reactiondata.csv'
-    xs_file = xs_data_dir + reactor_type
+    xs_file = f'{args.cross_section_data}/{burnup}/{args.reactor}_{args.enrichment_zone}_{burnup}_all_reactiondata.csv'
     xs_data = np.genfromtxt(xs_file, comments = '%', delimiter = ',')
     # Iterates through the csv file until the required reaction is found and the cross-section is outputted
     for row in xs_data:
@@ -254,44 +323,65 @@ def save_to_MPR(ORION,
         aligned_orion = "{:>{width}}".format(daughter_orion_16, width = width_orion)
         aligned_zaid = "{:>{width}}".format(int(daughter_16), width = width_zaid)
         file.write(f"{aligned_orion}{aligned_zaid} Reaction  16 (n,2n)\n")
-        file.write(f"{get_cross_section(nuclide_ID, reaction = 16)}\n")
-    
+        # This will need to be generalised in future if multiple burnups to be used
+        if args.reactor == 'LFR30':
+            file.write(f"{get_cross_section(nuclide_ID, reaction = 16, burnup = 'single')}\n")
+        elif args.reactor == 'LFR200':
+            for burnup_step in ['BoL', 'EoL']:
+                file.write(f"{get_cross_section(nuclide_ID, reaction = 16, burnup = burnup_step)}\n")
+
     if not np.isnan(daughter_17):
         daughter_orion_17 = calculate_daughter_orion(daughter_17, orion_dataframe)
         aligned_orion = "{:>{width}}".format(daughter_orion_17, width = width_orion)
         aligned_zaid = "{:>{width}}".format(int(daughter_17), width = width_zaid)
         file.write(f"{aligned_orion}{aligned_zaid} Reaction  17 (n,3n)\n")
-        file.write(f"{get_cross_section(nuclide_ID, reaction = 17)}\n")
+        if args.reactor == 'LFR30':
+            file.write(f"{get_cross_section(nuclide_ID, reaction = 17, burnup = 'single')}\n")
+        elif args.reactor == 'LFR200':
+            for burnup_step in ['BoL', 'EoL']:
+                file.write(f"{get_cross_section(nuclide_ID, reaction = 17, burnup = burnup_step)}\n")
     
     if not np.isnan(daughter_18):
         daughter_orion_18 = -1 # ORION ID for fission product is -1
         aligned_orion = "{:>{width}}".format(daughter_orion_18, width = width_orion)
         aligned_zaid = "{:>{width}}".format(int(daughter_18), width = width_zaid)
         file.write(f"{aligned_orion}{aligned_zaid} Reaction  18 (n,fission)\n")
-        file.write(f"{get_cross_section(nuclide_ID, reaction = 18)}\n")
+        if args.reactor == 'LFR30':
+            file.write(f"{get_cross_section(nuclide_ID, reaction = 18, burnup = 'single')}\n")
+        elif args.reactor == 'LFR200':
+            for burnup_step in ['BoL', 'EoL']:
+                file.write(f"{get_cross_section(nuclide_ID, reaction = 18, burnup = burnup_step)}\n")
 
     if not np.isnan(daughter_102):
         daughter_orion_102 = calculate_daughter_orion(daughter_102, orion_dataframe)
         aligned_orion = "{:>{width}}".format(daughter_orion_102, width = width_orion)
         aligned_zaid = "{:>{width}}".format(int(daughter_102), width = width_zaid)
         file.write(f"{aligned_orion}{aligned_zaid} Reaction 102 (n,gamma)\n")
-        file.write(f"{get_cross_section(nuclide_ID, reaction = 102)}\n")
+        if args.reactor == 'LFR30':
+            file.write(f"{get_cross_section(nuclide_ID, reaction = 102, burnup = 'single')}\n")
+        elif args.reactor == 'LFR200':
+            for burnup_step in ['BoL', 'EoL']:
+                file.write(f"{get_cross_section(nuclide_ID, reaction = 102, burnup = burnup_step)}\n")
 
     if not np.isnan(daughter_103):
         daughter_orion_103 = calculate_daughter_orion(daughter_103, orion_dataframe)
         aligned_orion = "{:>{width}}".format(daughter_orion_103, width = width_orion)
         aligned_zaid = "{:>{width}}".format(int(daughter_103), width = width_zaid)
         file.write(f"{aligned_orion}{aligned_zaid} Reaction 103 (n,proton)\n")
-        file.write(f"{get_cross_section(nuclide_ID, reaction = 103)}\n")
+        if args.reactor == 'LFR30':
+            file.write(f"{get_cross_section(nuclide_ID, reaction = 103, burnup = 'single')}\n")
+        elif args.reactor == 'LFR200':
+            for burnup_step in ['BoL', 'EoL']:
+                file.write(f"{get_cross_section(nuclide_ID, reaction = 103, burnup = burnup_step)}\n")
 
     return
 # -------------  Main Code  ------------ #
-
+args = parse_arguments()
 # Define the Element Symbols. Eisteinium included to prevent list index iss ues when calculating the parent nuclide name of Cf.
 element_symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es']
 
 # Reads in the csv file containing the data to be saved to the MPR file and assigns it to an array
-file_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_Reaction_Data/ZAID_results.csv'
+file_dir = f'{args.input}/ZAID_results.csv'
 df = pd.read_csv(file_dir, header = 0)
 
 # Assigns each column of csv file to a variable
@@ -319,21 +409,30 @@ parent_103_1m = df[df.columns[20]]
 parent_103_2m = df[df.columns[21]]
 
 # Sort the dataframe so that it is in the order of ascending ORION IDs
-df = df.sort_values(by=df.columns[2])
+df = df.sort_values(by = df.columns[2])
 
-file_path = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/LFR30_MPR.txt'
+file_path = f'{args.path}/{args.reactor}_{args.enrichment_zone}_MPR.txt'
 
 # Opens the excel file containing the ORION IDs for each nuclide and loads it in a pandas dataframe
-ORION_ID_dir = r'/mnt/c/Users/sam.taylor/OneDrive - Newcleo/Documents/Modelling_LFR/Generating_MPR_file/orion_nuclides_list.xlsx'
+ORION_ID_dir = f'{args.reaction_data}/orion_nuclides_list.xlsx'
 df_ORION_ID = pd.read_excel(ORION_ID_dir, header = None)
 # Columns in excel file do not contain headers so create them here
 df_ORION_ID.columns = ['Nuclide Name', 'Buffer Mass']
 nuclide_in_df = df_ORION_ID[df_ORION_ID.columns[0]]
 
+# This needs to be modified if more burnup steps are to be used in future analyses
+if args.reactor == 'LFR30':
+    num_burnup_steps = 1
+elif args.reactor == 'LFR200':
+    num_burnup_steps = 2
+
 # Write the preliminary information into the MPR file
 with open(file_path, "w") as file:
-    file.write('BurnupSteps     1\n')
-    file.write('0\n')  # 0 is fresh fuel, i.e. first burn-up
+    file.write(f'BurnupSteps     {num_burnup_steps}\n')
+    file.write('0\n')  # 0 MWd/tHM (fresh fuel, BoL)
+    # This should be generalised in future for multiple bunrup steps
+    if args.reactor == 'LFR200':
+        file.write('750000\n') # EoL burnup
     file.write(f'NNuclides    {len(nuclide)}\n')
     file.write(f'CrossSections\n')
     file.write(f'MaxReactions    {max(NumberReactions)}\n') # Maximum number of reactions for a single nuclide, set to 5 as only interested in MT = 16, 17, 18, 102, 103
